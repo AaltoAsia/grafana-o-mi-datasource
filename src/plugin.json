@@ -1,0 +1,42 @@
+{
+  "type": "datasource",
+  "name": "Open Messaging Interface",
+  "id": "aalto-asia-open-messaging-interface",
+  "metrics": true,
+  "category" : "tsdb",
+  "info": {
+    "description": "Open Messaging Interface (O-MI) datasource with Open Data Format (O-DF)",
+    "author": {
+      "name": "Aalto University, Adaptive Systems of Intelligent Agents (AaltoASIA)",
+      "url": "https://www.aalto.fi/en/department-of-computer-science/adaptive-systems-of-intelligent-agents"
+    },
+    "keywords": [
+      "o-mi",
+      "omi",
+      "o-df",
+      "odf",
+      "iot",
+      "internet of things",
+      "open data format",
+      "open group",
+      "systems of systems",
+      "life cycle",
+      "open messaging interface"
+    ],
+    "logos": {
+      "small": "img/O-MI.svg",
+      "large": "img/O-MI.svg"
+    },
+    "links": [
+      {"name": "GitHub", "url": "https://github.com/AaltoASIA/grafana-O-MI"},
+      {"name": "MIT License", "url": "https://github.com/AaltoASIA/grafana-O-MI/blob/master/LICENSE"}
+    ],
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaVersion": "6.5.x",
+    "plugins": []
+  }
+}

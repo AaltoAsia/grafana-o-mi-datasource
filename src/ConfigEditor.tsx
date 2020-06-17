@@ -43,7 +43,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
 
   updateDataSourceSettings = (config: DataSourceSettings<DataSourceJsonData, {}>) => {
     const { onOptionsChange, options } = this.props;
-    config.url = _.trimEnd(config.url, '/ ');
+    config.url = _.trimEnd(config.url, ' ');
 
     onOptionsChange({ ...options, ...config });
   };

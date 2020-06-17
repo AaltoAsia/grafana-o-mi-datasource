@@ -1,10 +1,12 @@
 import defaults from 'lodash/defaults';
+import _ from 'lodash';
+//import { Dictionary } from 'lodash';
 
 import React, { ChangeEvent, PureComponent } from 'react';
 import { LegacyForms, QueryField, TypeaheadInput, TypeaheadOutput } from '@grafana/ui';
 import { QueryEditorProps } from '@grafana/data';
 import { DataSource } from './DataSource';
-import { defaultQuery, MyDataSourceOptions, MyQuery } from './types';
+import { defaultQuery, MyDataSourceOptions, MyQuery, SimpleSuggestion } from './types';
 
 const { FormField } = LegacyForms;
 
@@ -24,11 +26,26 @@ export class QueryEditor extends PureComponent<Props> {
   };
 
   onTypeahead = async (typeahead: TypeaheadInput): Promise<TypeaheadOutput> => {
-    const { value } = typeahead;
+    const { text } = typeahead;
+    const { datasource } = this.props;
 
-    console.log('handleTypeahead', typeahead);
+    const resultPromise = datasource.metricFindQuery(text); //text.slice(0, text.lastIndexOf('/')));
+    return resultPromise.then((suggestions: SimpleSuggestion[]) => {
+      const results = _.groupBy(suggestions, 'type');
+      let createGroup = (type: string) => ({
+        label: type,
+        items: results[type].map((s: SimpleSuggestion) => ({
+          label: s.text,
+          filterText: s.value,
+          insertText: s.value,
+        })),
+      });
+      const suggestionGroups = Object.keys(results).map(createGroup);
 
-    return { suggestions: [] };
+      console.log('handleTypeahead', typeahead, suggestionGroups);
+
+      return { suggestions: suggestionGroups };
+    });
   };
 
   render() {

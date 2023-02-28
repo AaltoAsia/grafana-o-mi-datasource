@@ -2,8 +2,12 @@
 
 let WebOmi = { debug: console.log };
 
-export let parseXml = function(responseString: string) {
+export let parseXml = function(response: string | Document) {
   var xmlTree;
+  if (typeof response !== 'string') {
+    return response;
+  }
+  const responseString = response as string;
   if (responseString.length < 2) {
     return null;
   }

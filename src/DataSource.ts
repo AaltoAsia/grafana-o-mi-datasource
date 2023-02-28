@@ -13,7 +13,7 @@ import {
 } from '@grafana/data';
 import { getBackendSrv, BackendSrvRequest } from '@grafana/runtime';
 
-import { MyQuery, MyDataSourceOptions, defaultQuery, SimpleSuggestion } from './types';
+import { MyQuery, MyDataSourceOptions, defaultQuery, SimpleSuggestion, SimpleSuggestions } from './types';
 
 interface ResponseI extends Response {
   data: string;
@@ -53,8 +53,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
     for (let target of options.targets) {
       const query = defaults(target, defaultQuery);
-      refIds.set(query.queryText, query.refId); // Path -> refId
-      const segments = _.split(query.queryText, '/');
+      if (query.hide) {continue;}
+      refIds.set(query.queryPath, query.refId); // Path -> refId
+      const segments = _.split(query.queryPath, '/');
       let parent: Node = odf.documentElement;
       for (let parentId of _.initial(segments)) {
         //(segments, 0,segments.length-1)) {
@@ -62,11 +63,21 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         parent.appendChild(newObject);
         parent = newObject;
       }
-      parent.appendChild(omi.createOdfInfoItem(odf, _.last(segments) || ''));
+      let getLast = () => {
+        switch (query.odfType) {
+          case 'Object':
+            return omi.createOdfObject(odf, _.last(segments) || '');
+          case 'InfoItem':
+          default:
+            return omi.createOdfInfoItem(odf, _.last(segments) || '');
+        }
+      };
+      parent.appendChild(getLast());
     }
+    const newest = (options.maxDataPoints || 1000) < 1000 ? options.maxDataPoints : 1000;
 
-    let omiRequest = `<omiEnvelope xmlns="http://www.opengroup.org/xsd/omi/1.0/" version="1.0" ttl="0">
-        <read msgformat="odf" newest="${options.maxDataPoints}"
+    const omiRequest = `<omiEnvelope xmlns="http://www.opengroup.org/xsd/omi/1.0/" version="1.0" ttl="0">
+        <read msgformat="odf" newest="${newest}"
           begin="${options.range.from.toISOString()}" end="${options.range.to.toISOString()}">
           <msg>
             ${odf.documentElement.outerHTML}
@@ -104,11 +115,12 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
               times.push(_.round(Number(value.attributes.getNamedItem('unixTime')?.value) * 1000));
               values.push(value.textContent || '');
             }
+            const odfPath = omi.elemOdfPath(item);
             return new MutableDataFrame({
-              refId: refIds.get(omi.elemOdfPath(item)),
+              refId: refIds.get(odfPath),
               fields: [
                 { name: 'Time', values: times, type: FieldType.time },
-                { name: 'Value', values: values, type: FieldType.number }, // FIXME: if string or boolean
+                { name: odfPath, values: values, type: FieldType.number }, // FIXME: if string or boolean
               ],
             });
           })
@@ -167,7 +179,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   }
 
   mapToTextValue(parent: string) {
-    return function(result: string): SimpleSuggestion[] {
+    return function(result: string | Document): SimpleSuggestion[] {
       console.log('D QUERY RES:', result);
 
       const doc = omi.parseXml(result);
@@ -204,7 +216,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   //  return response.data.then(this.mapToTextValue(query));
   //}
 
-  metricFindQuery(query: string): Promise<SimpleSuggestion[]> {
+  _metricFindQuery(query: string): Promise<SimpleSuggestions> {
     console.log('DISCOVERY', query);
     //target: this.templateSrv.replace(query, null, 'regex')
     const odfPath = _.isString(query) ? query : '';
@@ -223,9 +235,13 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
     const results = responses.then((rawResponses: ResponseI[]) => {
       console.log('D resp', rawResponses);
-      return _(rawResponses)
+      var type;
+      const suggestions = _(rawResponses)
         .map(response => {
           if (response.status === 200) {
+            const doc = omi.parseXml(response.data);
+            type = doc?.documentElement?.nodeName;
+            console.log('TYPE', type);
             return this.mapToTextValue(response.query)(response.data);
           }
           return [];
@@ -233,8 +249,12 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         .flatten()
         .uniq()
         .value();
+      return { type: type ? type : 'InfoItem', suggestions };
     });
 
     return results;
+  }
+  metricFindQuery(query: string): Promise<SimpleSuggestion[]> {
+    return this._metricFindQuery(query).then(o => o.suggestions);
   }
 }

@@ -2,13 +2,16 @@ import { DataQuery, DataSourceJsonData } from '@grafana/data';
 import { MetricFindValue } from '@grafana/data';
 
 export interface MyQuery extends DataQuery {
-  queryText: string;
+  queryPath: string;
   newest?: number;
+  odfType: string; // e.g. Object or InfoItem
 }
 
 export const defaultQuery: Partial<MyQuery> = {
-  queryText: '',
+  queryPath: '',
   newest: 500,
+  odfType: 'InfoItem',
+  hide: false
 };
 
 /**
@@ -23,6 +26,11 @@ export interface MyDataSourceOptions extends DataSourceJsonData {
  */
 export interface MySecureJsonData {
   apiKey?: string;
+}
+
+export interface SimpleSuggestions {
+  type: string;
+  suggestions: SimpleSuggestion[];
 }
 
 export interface SimpleSuggestion extends MetricFindValue {

@@ -24,7 +24,7 @@
   "dependencies": {
     "@types/jsdom": "^16.2.3",
     "@types/jstree": "^3.3.40",
-    "jsdom": "^16.2.2",
+    "jsdom": "^16.5.0",
     "react-simple-jstree": "^0.2.2"
   }
 }

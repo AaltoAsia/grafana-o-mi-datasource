@@ -11,7 +11,7 @@
   "author": "Aalto University, Adaptive Systems of Intelligent Agents (AaltoASIA)",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@grafana/data": "7.0.1",
+    "@grafana/data": "7.5.17",
     "@grafana/toolkit": "9.4.2",
     "@grafana/ui": "9.4.3",
     "@types/lodash": "latest",
